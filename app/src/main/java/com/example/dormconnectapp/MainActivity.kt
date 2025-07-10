@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupActionBarWithNavController
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,7 +22,7 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        // טיפול ב-insets (לא קשור לטולבר)
+        // טיפול ב-insets לשמירה על שוליים במסכים שונים
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
@@ -31,35 +33,42 @@ class MainActivity : AppCompatActivity() {
         val toolbar: Toolbar = findViewById(R.id.main_toolbar)
         toolbar.setBackgroundColor(Color.parseColor("#b1e5d7"))
         setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false)   // ללא כותרת אוטומטית
 
-        // מכולה אופקית ללוגו + טקסט
+        // ⬇ שימוש נכון ב-Navigation עם FragmentContainerView
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+        setupActionBarWithNavController(navController)
+
+        // הוספת לוגו וטקסט מותאם אישית לטולבר
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        // לוגו (גדול • 80 dp)
         val logoSizePx = (80 * resources.displayMetrics.density).toInt()
         val logo = ImageView(this).apply {
-            setImageResource(R.drawable.dormconnect_icon_clean)   // השם החדש
+            setImageResource(R.drawable.dormconnect_icon_clean)
             layoutParams = LinearLayout.LayoutParams(logoSizePx, logoSizePx)
         }
         container.addView(logo)
 
-        // טקסט “DormConnect”
         val title = TextView(this).apply {
             text = "DormConnect"
-            textSize = 24f                      // 24 sp – בולט
+            textSize = 24f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(Color.BLACK)
-            setPadding((8 * resources.displayMetrics.density).toInt(), 0, 0, 0) // רווח מהלוגו
+            setPadding((8 * resources.displayMetrics.density).toInt(), 0, 0, 0)
         }
         container.addView(title)
 
-        // מוסיפים את המכולה לטולבר (קודם מנקים כל View קיים)
         toolbar.removeAllViews()
         toolbar.addView(container)
     }
-}
 
+    // תומך בחץ Back אוטומטי בעת ניווט אחורה בין פרגמנטים
+    override fun onSupportNavigateUp(): Boolean {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+        return navController.navigateUp() || super.onSupportNavigateUp()
+    }
+}
