@@ -72,5 +72,15 @@
             android:backgroundTint="#26A69A"
             android:textColor="#FFFFFF" />
 
+        <Button
+            android:id="@+id/buttonSignUp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sign Up"
+            android:minHeight="48dp"
+            android:backgroundTint="#00796B"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="8dp" />
+
     </LinearLayout>
 </ScrollView>
