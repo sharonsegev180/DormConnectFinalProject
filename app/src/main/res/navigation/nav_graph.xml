@@ -21,4 +21,30 @@
         android:name="com.example.dormconnectapp.HomeFragment"
         android:label="Home"
         tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/feedFragment"
+        android:name="com.example.dormconnectapp.Feedfragment"
+        android:label="Feed">
+    </fragment>
+
+    <fragment
+        android:id="@+id/Homefragment"
+        android:name="com.example.dormconnectapp.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/Feedfragment"
+        android:name="com.example.dormconnectapp.Feedfragment"
+        android:label="Feed"
+        tools:layout="@layout/fragment_feed" />
+
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.example.dormconnectapp.ChatFragment"
+        android:label="Chat"
+        tools:layout="@layout/fragment_chat" />
+
+
 </navigation>
