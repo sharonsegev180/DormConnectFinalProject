@@ -45,6 +45,11 @@
         android:name="com.example.dormconnectapp.ChatFragment"
         android:label="Chat"
         tools:layout="@layout/fragment_chat" />
+    <fragment
+        android:id="@+id/noticeBoardFragment"
+        android:name="com.example.dormconnectapp.NoticeBoardFragment"
+        android:label="Notice Board"
+        tools:layout="@layout/fragment_notice_board" />
 
 
 </navigation>
