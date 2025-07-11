@@ -18,6 +18,8 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.NavigationUI
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.view.View
+import com.google.firebase.FirebaseApp
+
 
 
 
@@ -27,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        FirebaseApp.initializeApp(this)
 
 
         // טיפול ב-insets לשמירה על שוליים במסכים שונים
