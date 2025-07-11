@@ -6,6 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.dormconnectapp.databinding.FragmentHomeBinding
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.findNavController
+import kotlinx.coroutines.*
+import androidx.lifecycle.lifecycleScope
+
+
+
+
 
 class HomeFragment : Fragment() {
 
@@ -23,11 +31,19 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
+
         binding.textViewWelcomeHome.text = "Welcome to DormConnect!"
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(1000) // 1 seconds
+            findNavController().navigate(R.id.Feedfragment)
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
 }
