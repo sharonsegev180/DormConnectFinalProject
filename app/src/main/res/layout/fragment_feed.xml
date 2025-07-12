@@ -1,23 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="8dp">
+    android:layout_height="match_parent">
 
+    <!-- Feed RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/feedRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:background="#FFF3E0" />
 
-    <Button
-        android:id="@+id/postButton"
-        android:layout_width="match_parent"
+    <!-- Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddPost"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="POST"
-        android:layout_marginBottom="100dp"
-        android:backgroundTint="@color/teal_700"
-        android:textColor="@android:color/white"/>
-</LinearLayout>
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="110dp"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="@color/teal_700"
+        app:tint="@android:color/white"
+        android:contentDescription="Add Post" />
+
+
+
+</FrameLayout>

@@ -11,6 +11,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.dormconnectapp.databinding.FragmentLoginBinding
 import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.fragment.findNavController
+import com.google.firebase.firestore.FirebaseFirestore
 
 
 class LogInFragment : Fragment() {
@@ -31,7 +32,7 @@ class LogInFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val universities = arrayOf("Select University", "BIU", "Tel Aviv University", "Haifa University")
+        val universities = arrayOf("Select University", "Bar-Ilan", "Tel Aviv", "Hebrew", "Technion")
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, universities)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerUniversity.adapter = adapter
@@ -43,35 +44,40 @@ class LogInFragment : Fragment() {
             val university = binding.spinnerUniversity.selectedItem.toString()
             val email = binding.editTextEmail.text.toString()
             val password = binding.editTextPassword.text.toString()
-            val rememberMe = binding.checkBoxRememberMe.isChecked
 
             if (university == "Select University" || email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(requireContext(), "Please fill in all fields.", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(requireContext(), "Logging in...", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.action_logInFragment_to_homeFragment)
-            }
-        }
-
-        binding.buttonSignUp.setOnClickListener {
-            val university = binding.spinnerUniversity.selectedItem.toString()
-            val email = binding.editTextEmail.text.toString()
-            val password = binding.editTextPassword.text.toString()
-
-            if (university == "Select University" || email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(requireContext(), "Please fill in all fields.", Toast.LENGTH_SHORT).show()
-            } else {
-                auth.createUserWithEmailAndPassword(email, password)
+                auth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            Toast.makeText(requireContext(), "Account created successfully", Toast.LENGTH_SHORT).show()
-                            findNavController().navigate(R.id.feedFragment)
+                            val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
+                            FirebaseFirestore.getInstance().collection("users").document(userId).get()
+                                .addOnSuccessListener { document ->
+                                    val university = document.getString("university")
+                                    Toast.makeText(requireContext(), "Logged in as: $university", Toast.LENGTH_SHORT).show()
+                                    findNavController().navigate(R.id.action_logInFragment_to_homeFragment)
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(requireContext(), "Login successful, but failed to load profile", Toast.LENGTH_SHORT).show()
+                                    findNavController().navigate(R.id.action_logInFragment_to_homeFragment)
+                                }
+
                         } else {
-                            Toast.makeText(requireContext(), "Sign up failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), "Login failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                         }
                     }
+
             }
+
         }
+
+
+
+        binding.buttonSignUp.setOnClickListener {
+            findNavController().navigate(R.id.action_logInFragment_to_registerFragment)
+        }
+
 
 
     }
