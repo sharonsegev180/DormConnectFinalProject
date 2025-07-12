@@ -15,6 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Full Name"
+            android:minHeight="48dp"
             android:inputType="textPersonName"
             android:layout_marginBottom="16dp" />
 
@@ -23,6 +24,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Email"
+            android:minHeight="48dp"
             android:inputType="textEmailAddress"
             android:layout_marginBottom="16dp" />
 
@@ -31,6 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Password"
+            android:minHeight="48dp"
             android:inputType="textPassword"
             android:layout_marginBottom="16dp" />
 
@@ -39,6 +42,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Confirm Password"
+            android:minHeight="48dp"
             android:inputType="textPassword"
             android:layout_marginBottom="16dp" />
 
@@ -46,6 +50,7 @@
             android:id="@+id/spinnerUniversity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="48dp"
             android:layout_marginBottom="16dp" />
 
         <Button

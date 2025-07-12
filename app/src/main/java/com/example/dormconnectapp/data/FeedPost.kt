@@ -1,8 +1,15 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.data
+
+import com.google.firebase.Timestamp
 
 data class FeedPost(
-    val username: String,
-    val profileImageRes: Int,
-    val content: String,
-    val postImageRes: Int? = null
+    @JvmField
+    var postId: String? = null,
+    var username: String = "",
+    var content: String = "",
+    var profileImageUrl: String? = null,
+    var postImageUrl: String? = null,
+    var timestamp: Timestamp? = null,
+    val likes: Int = 0,
+    val likedBy: List<String> = emptyList()
 )
