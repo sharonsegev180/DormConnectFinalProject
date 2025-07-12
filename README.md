@@ -27,13 +27,8 @@ This is a **student project** under active development as part of a university c
 
 ## 🔧 Tech Stack
 
-- **Kotlin** + **Jetpack (ViewBinding, Navigation)**
+- **Kotlin**_**Android Studio**
 - **Firebase**
-  - Authentication
-  - Firestore
-  - Storage
-- **Glide** — for loading images
-- **Material Components** — FABs, dialogs, etc.
 
 ---
 
