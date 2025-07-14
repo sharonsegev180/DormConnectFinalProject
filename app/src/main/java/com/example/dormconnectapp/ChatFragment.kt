@@ -42,6 +42,7 @@ class ChatFragment : Fragment() {
         chatRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         chatRecyclerView.adapter = adapter
 
+
         listenForMessages()
 
         sendButton.setOnClickListener {
@@ -83,9 +84,12 @@ class ChatFragment : Fragment() {
                     if (message != null) {
                         messages.add(message)
                     }
+                    Log.d("ChatFragment", "Messages fetched: ${snapshot.size()}")
+
                 }
                 adapter.notifyDataSetChanged()
                 chatRecyclerView.scrollToPosition(messages.size - 1)
             }
+
     }
 }
