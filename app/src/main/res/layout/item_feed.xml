@@ -81,6 +81,13 @@
         android:src="@android:drawable/ic_dialog_email"
         android:contentDescription="Comment" />
 
+    <TextView
+        android:id="@+id/commentCountText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textColor="#666"
+        android:textSize="14sp"/>
 
     <TextView
         android:id="@+id/postTimestamp"
@@ -90,5 +97,15 @@
         android:textColor="#666"
         android:textSize="12sp"
         android:layout_marginTop="4dp"/>
+
+    <TextView
+        android:id="@+id/distanceText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="5 km away"
+        android:textSize="12sp"
+        android:textColor="#888"
+        android:layout_marginTop="4dp" />
+
 
 </LinearLayout>

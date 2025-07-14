@@ -12,12 +12,10 @@
         android:minHeight="48dp"
         android:inputType="textMultiLine" />
 
-    <ImageView
-        android:id="@+id/ivSelectedImage"
+    <Button
+        android:id="@+id/btnSelectImage"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_marginTop="12dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_image"
-        android:contentDescription="Selected image" />
+        android:layout_height="wrap_content"
+        android:text="Choose Image (Optional)" />
+
 </LinearLayout>

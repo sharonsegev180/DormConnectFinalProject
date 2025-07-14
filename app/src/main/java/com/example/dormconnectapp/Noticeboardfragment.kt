@@ -18,6 +18,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import java.io.File
+import java.io.FileOutputStream
 
 class NoticeBoardFragment : Fragment() {
 
@@ -71,15 +73,13 @@ class NoticeBoardFragment : Fragment() {
             .setPositiveButton("Post") { _, _ ->
                 val content = etNoteContent.text.toString().trim()
                 if (content.isNotEmpty()) {
-                    if (selectedImageUri != null) {
-                        uploadImageThenSaveNote(content)
-                    } else {
-                        saveNoteToFirestore(content, null)
-                    }
+                    val imagePath = selectedImageUri?.let { saveImageLocally(it) }
+                    saveNoteToFirestore(content, imagePath)
                 } else {
                     Toast.makeText(context, "Note cannot be empty", Toast.LENGTH_SHORT).show()
                 }
             }
+
             .setNegativeButton("Cancel", null)
             .show()
     }
@@ -97,14 +97,18 @@ class NoticeBoardFragment : Fragment() {
 
                     val noteText = noteView.findViewById<TextView>(R.id.noteContentText)
                     val noteImage = noteView.findViewById<ImageView>(R.id.noteImageView)
+                    val authorText = noteView.findViewById<TextView>(R.id.noteAuthorText) // ← Add this line
 
                     noteText.text = doc.getString("content") ?: ""
 
-                    val imageUrl = doc.getString("imageUrl")
-                    if (!imageUrl.isNullOrEmpty()) {
+                    val author = doc.getString("author") ?: "Anonymous"
+                    authorText.text = "by $author" // ← Show author
+
+                    val imagePath = doc.getString("imagePath")
+                    if (!imagePath.isNullOrEmpty()) {
                         noteImage.visibility = View.VISIBLE
                         Glide.with(this)
-                            .load(imageUrl)
+                            .load(File(imagePath))
                             .into(noteImage)
                     } else {
                         noteImage.visibility = View.GONE
@@ -115,40 +119,52 @@ class NoticeBoardFragment : Fragment() {
             }
     }
 
-    private fun uploadImageThenSaveNote(noteContent: String) {
-        val imageRef = FirebaseStorage.getInstance().reference
-            .child("notice_images/${System.currentTimeMillis()}.jpg")
 
-        selectedImageUri?.let { uri ->
-            imageRef.putFile(uri)
-                .addOnSuccessListener {
-                    imageRef.downloadUrl.addOnSuccessListener { imageUrl ->
-                        saveNoteToFirestore(noteContent, imageUrl.toString())
-                    }
-                }
-                .addOnFailureListener {
-                    Toast.makeText(context, "Image upload failed", Toast.LENGTH_SHORT).show()
-                }
+
+    private fun saveImageLocally(uri: Uri): String? {
+        val context = requireContext()
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val filename = "note_image_${System.currentTimeMillis()}.jpg"
+        val file = File(context.filesDir, filename)
+        inputStream?.use { input ->
+            FileOutputStream(file).use { output ->
+                input.copyTo(output)
+            }
         }
+        return file.absolutePath
     }
 
-    private fun saveNoteToFirestore(noteContent: String, imageUrl: String?) {
-        val note = hashMapOf(
-            "content" to noteContent,
-            "author" to (auth.currentUser?.displayName ?: "Anonymous"),
-            "timestamp" to FieldValue.serverTimestamp(),
-            "imageUrl" to imageUrl
-        )
 
-        firestore.collection("notice_board")
-            .add(note)
-            .addOnSuccessListener {
-                Toast.makeText(context, "Note added!", Toast.LENGTH_SHORT).show()
+    private fun saveNoteToFirestore(noteContent: String, localImagePath: String?) {
+        val userId = auth.currentUser?.uid ?: return
+
+        firestore.collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { doc ->
+                val username = doc.getString("name") ?: "Anonymous"
+
+                val note = hashMapOf(
+                    "content" to noteContent,
+                    "author" to username,
+                    "timestamp" to FieldValue.serverTimestamp(),
+                    "imagePath" to localImagePath
+                )
+
+                firestore.collection("notice_board")
+                    .add(note)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Note added!", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Failed to save note", Toast.LENGTH_SHORT).show()
+                    }
             }
             .addOnFailureListener {
-                Toast.makeText(context, "Failed to save note", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Failed to fetch user info", Toast.LENGTH_SHORT).show()
             }
     }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

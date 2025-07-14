@@ -37,7 +37,7 @@ class HomeFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             delay(1000) // 1 seconds
-            findNavController().navigate(R.id.Feedfragment)
+            findNavController().navigate(R.id.profileFragment)
         }
     }
 

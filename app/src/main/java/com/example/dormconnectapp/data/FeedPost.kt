@@ -11,5 +11,8 @@ data class FeedPost(
     var postImageUrl: String? = null,
     var timestamp: Timestamp? = null,
     val likes: Int = 0,
-    val likedBy: List<String> = emptyList()
+    val likedBy: List<String> = emptyList(),
+    val commentCount: Int = 0,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
