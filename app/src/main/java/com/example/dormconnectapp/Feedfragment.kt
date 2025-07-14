@@ -1,6 +1,10 @@
 package com.example.dormconnectapp
 
+import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -8,10 +12,14 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresPermission
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.dormconnectapp.databinding.FragmentFeedBinding
@@ -21,6 +29,9 @@ import com.example.dormconnectapp.data.FeedPost
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.storage.FirebaseStorage
+import java.io.File
+import java.io.FileOutputStream
+import kotlin.math.pow
 
 class Feedfragment : Fragment() {
 
@@ -30,13 +41,29 @@ class Feedfragment : Fragment() {
     private lateinit var adapter: FeedAdapter
     private val feedList = mutableListOf<FeedPost>()
     private var selectedImageUri: Uri? = null
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            selectedImageUri = uri
-            imagePreview?.setImageURI(uri)
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            selectedImageUri = result.data?.data
+            Toast.makeText(context, "Image selected", Toast.LENGTH_SHORT).show()
         }
     }
-    private var imagePreview: ImageView? = null
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+        if (fineGranted || coarseGranted) {
+            Toast.makeText(requireContext(), "Location permission granted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private lateinit var fusedLocationClient: com.google.android.gms.location.FusedLocationProviderClient
+    private var selectedDistanceKm: Double? = null
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,12 +73,11 @@ class Feedfragment : Fragment() {
         return binding.root
     }
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         firestore = FirebaseFirestore.getInstance()
 
-        adapter = FeedAdapter(feedList)
-        binding.feedRecyclerView.adapter = adapter
         binding.feedRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         loadFeedPosts()
@@ -65,16 +91,49 @@ class Feedfragment : Fragment() {
         Log.d("FABCheck", "FAB exists: ${binding.fabAddPost != null}")
         binding.fabAddPost.setBackgroundColor(Color.GREEN)
 
+        val fineLocationGranted = ActivityCompat.checkSelfPermission(
+            requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseLocationGranted = ActivityCompat.checkSelfPermission(
+            requireContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!fineLocationGranted && !coarseLocationGranted) {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+        fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(requireContext())
+
+        binding.sortSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                loadFeedPosts()  // Refresh feed
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+
 
     }
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun showAddPostDialog() {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_post, null)
         val etPostContent = dialogView.findViewById<EditText>(R.id.etPostContent)
-        imagePreview = dialogView.findViewById(R.id.ivSelectedImage)
+        val btnSelectImage = dialogView.findViewById<Button>(R.id.btnSelectImage)
 
-        imagePreview?.setOnClickListener {
-            pickImageLauncher.launch("image/*")
+        selectedImageUri = null
+
+        btnSelectImage.setOnClickListener {
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            imagePickerLauncher.launch(intent)
         }
 
         AlertDialog.Builder(requireContext())
@@ -83,11 +142,8 @@ class Feedfragment : Fragment() {
             .setPositiveButton("Post") { _, _ ->
                 val content = etPostContent.text.toString().trim()
                 if (content.isNotEmpty()) {
-                    if (selectedImageUri != null) {
-                        uploadImageAndSavePost(content, selectedImageUri!!)
-                    } else {
-                        savePostToFirestore(content, null)
-                    }
+                    val localPath = selectedImageUri?.let { saveImageLocally(it) }
+                    savePostToFirestore(content, localPath)
                 } else {
                     Toast.makeText(context, "Post cannot be empty", Toast.LENGTH_SHORT).show()
                 }
@@ -96,68 +152,167 @@ class Feedfragment : Fragment() {
             .show()
     }
 
+    private fun saveImageLocally(uri: Uri): String? {
+        val inputStream = requireContext().contentResolver.openInputStream(uri)
+        val filename = "post_image_${System.currentTimeMillis()}.jpg"
+        val file = File(requireContext().filesDir, filename)
+        inputStream?.use { input ->
+            FileOutputStream(file).use { output ->
+                input.copyTo(output)
+            }
+        }
+        return file.absolutePath
+    }
 
 
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun loadFeedPosts() {
+        if (
+            ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         firestore.collection("feed_posts")
             .addSnapshotListener { snapshots, error ->
-                if (error != null) {
+                if (error != null || snapshots == null) {
                     Toast.makeText(context, "Error loading posts", Toast.LENGTH_SHORT).show()
                     return@addSnapshotListener
                 }
 
-                if (snapshots != null) {
-                    feedList.clear()
-                    Log.d("FeedSnapshot", "Documents: ${snapshots.size()}")
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    val filteredList = mutableListOf<FeedPost>()
 
                     for (doc in snapshots) {
                         val post = doc.toObject(FeedPost::class.java)
                         post.postId = doc.id
-                        feedList.add(post)
-                        Log.d("RawDoc", doc.data.toString())
 
+                        val postLat = doc.getDouble("latitude")
+                        val postLon = doc.getDouble("longitude")
+
+                        val include = if (location != null && postLat != null && postLon != null) {
+                            selectedDistanceKm == null || isWithinDistance(
+                                location.latitude, location.longitude, postLat, postLon, selectedDistanceKm!!
+                            )
+                        } else true
+
+                        if (include) filteredList.add(post)
                     }
 
-                    adapter.notifyDataSetChanged()
+                    val sorted = when (binding.sortSpinner.selectedItem.toString()) {
+                        "Distance" -> filteredList.sortedBy {
+                            if (it.latitude != null && it.longitude != null && location != null) {
+                                calculateDistance(location.latitude, location.longitude, it.latitude!!, it.longitude!!)
+                            } else Double.MAX_VALUE
+                        }
+                        else -> filteredList.sortedByDescending { it.timestamp?.toDate()?.time }
+                    }
+
+                    adapter = FeedAdapter(sorted, location?.latitude, location?.longitude)
+                    binding.feedRecyclerView.adapter = adapter
+                }.addOnFailureListener {
+                    Toast.makeText(context, "Failed to get location", Toast.LENGTH_SHORT).show()
                 }
             }
     }
 
-    private fun savePostToFirestore(content: String, imageUrl: String?) {
-        val post = hashMapOf(
-            "username" to (FirebaseAuth.getInstance().currentUser?.displayName ?: "Anonymous"),
-            "content" to content,
-            "profileImageUrl" to null,
-            "postImageUrl" to imageUrl,
-            "timestamp" to FieldValue.serverTimestamp()
-        )
+    private fun calculateDistance(
+        lat1: Double,
+        lon1: Double,
+        lat2: Double,
+        lon2: Double
+    ): Double {
+        val earthRadius = 6371.0 // Radius in kilometers
 
-        firestore.collection("feed_posts")
-            .add(post)
-            .addOnSuccessListener {
-                Toast.makeText(context, "Post added!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "Failed to add post: ${it.message}", Toast.LENGTH_LONG).show()
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+
+        val a = Math.sin(dLat / 2).pow(2.0) +
+                Math.cos(Math.toRadians(lat1)) *
+                Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2).pow(2.0)
+
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+        return earthRadius * c
+    }
+
+
+
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    private fun savePostToFirestore(content: String, imagePath: String?) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance().collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { doc ->
+                val username = doc.getString("name") ?: "Anonymous"
+
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    val post = hashMapOf(
+                        "username" to username,
+                        "content" to content,
+                        "profileImageUrl" to null,
+                        "postImageUrl" to imagePath,
+                        "timestamp" to FieldValue.serverTimestamp(),
+                        "latitude" to location?.latitude,
+                        "longitude" to location?.longitude
+                    )
+
+                    FirebaseFirestore.getInstance().collection("feed_posts")
+                        .add(post)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Post added!", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Failed to add post", Toast.LENGTH_LONG).show()
+                        }
+                }
             }
     }
 
 
+
+
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun uploadImageAndSavePost(content: String, imageUri: Uri) {
         val storageRef = FirebaseStorage.getInstance().reference
             .child("feed_images/${System.currentTimeMillis()}.jpg")
 
         storageRef.putFile(imageUri)
-            .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { uri ->
-                    savePostToFirestore(content, uri.toString())
-                }
+            .addOnSuccessListener { uri ->
+                savePostToFirestore(content, uri.toString())
             }
             .addOnFailureListener {
                 Toast.makeText(context, "Image upload failed", Toast.LENGTH_SHORT).show()
             }
     }
+
+    private fun isWithinDistance(
+        userLat: Double,
+        userLon: Double,
+        postLat: Double,
+        postLon: Double,
+        maxDistanceKm: Double = 10.0
+    ): Boolean {
+        val earthRadius = 6371 // km
+
+        val dLat = Math.toRadians(postLat - userLat)
+        val dLon = Math.toRadians(postLon - userLon)
+
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(userLat)) * Math.cos(Math.toRadians(postLat)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        val distance = earthRadius * c
+
+        return distance <= maxDistanceKm
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

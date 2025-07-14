@@ -14,14 +14,20 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import android.content.Context
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.dormconnectapp.data.Comment
 import com.google.firebase.firestore.Query
+import java.io.File
 
 
-class FeedAdapter(private val feedList: List<FeedPost>) :
-    RecyclerView.Adapter<FeedAdapter.FeedViewHolder>() {
+class FeedAdapter(
+    private val feedList: List<FeedPost>,
+    private val userLat: Double?,
+    private val userLon: Double?
+) : RecyclerView.Adapter<FeedAdapter.FeedViewHolder>() {
+
 
     class FeedViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val profileImage: ImageView = view.findViewById(R.id.profileImage)
@@ -32,6 +38,8 @@ class FeedAdapter(private val feedList: List<FeedPost>) :
         val timestampText: TextView = view.findViewById(R.id.postTimestamp)
         val likeCountText: TextView = view.findViewById(R.id.likeCountText)
         val commentButton: ImageView = view.findViewById(R.id.commentButton)
+        val commentCountText: TextView = view.findViewById(R.id.commentCountText)
+        val distanceText: TextView = view.findViewById(R.id.distanceText)
 
 
     }
@@ -59,13 +67,20 @@ class FeedAdapter(private val feedList: List<FeedPost>) :
 
         // Load post image from URL or hide it
         if (!item.postImageUrl.isNullOrEmpty()) {
-            holder.postImage.visibility = View.VISIBLE
-            Glide.with(holder.postImage.context)
-                .load(item.postImageUrl)
-                .into(holder.postImage)
+            val imageFile = File(item.postImageUrl)
+            if (imageFile.exists()) {
+                holder.postImage.visibility = View.VISIBLE
+                Glide.with(holder.postImage.context)
+                    .load(imageFile)
+                    .into(holder.postImage)
+            } else {
+                holder.postImage.visibility = View.GONE
+            }
         } else {
             holder.postImage.visibility = View.GONE
         }
+
+
 
         holder.likeButton.setOnClickListener {
             // TODO: Implement like logic
@@ -116,8 +131,33 @@ class FeedAdapter(private val feedList: List<FeedPost>) :
             val postId = item.postId ?: return@setOnClickListener
             showCommentsDialog(context, postId)
         }
+        holder.commentCountText.text = item.commentCount.toString()
+
+        val postLat = item.latitude
+        val postLon = item.longitude
+
+        if (userLat != null && userLon != null && postLat != null && postLon != null) {
+            val distance = calculateDistance(userLat, userLon, postLat, postLon)
+            holder.distanceText.text = String.format("%.1f km away", distance)
+            holder.distanceText.visibility = View.VISIBLE
+        } else {
+            holder.distanceText.visibility = View.GONE
+        }
 
 
+    }
+
+
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val R = 6371.0 // Radius of Earth in kilometers
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) *
+                Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
     }
 
     private fun showCommentsDialog(context: Context, postId: String) {
@@ -150,18 +190,35 @@ class FeedAdapter(private val feedList: List<FeedPost>) :
         sendBtn.setOnClickListener {
             val text = input.text.toString().trim()
             if (text.isNotEmpty()) {
-                val comment = hashMapOf(
-                    "username" to (FirebaseAuth.getInstance().currentUser?.displayName ?: "Anonymous"),
-                    "content" to text,
-                    "timestamp" to FieldValue.serverTimestamp()
-                )
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                if (userId != null) {
+                    FirebaseFirestore.getInstance().collection("users").document(userId)
+                        .get()
+                        .addOnSuccessListener { doc ->
+                            val username = doc.getString("name") ?: "Anonymous"
+                            val comment = hashMapOf(
+                                "username" to username,
+                                "content" to text,
+                                "timestamp" to FieldValue.serverTimestamp()
+                            )
 
-                FirebaseFirestore.getInstance()
-                    .collection("feed_posts").document(postId)
-                    .collection("comments")
-                    .add(comment)
+                            FirebaseFirestore.getInstance()
+                                .collection("feed_posts").document(postId)
+                                .collection("comments")
+                                .add(comment)
+                                .addOnSuccessListener {
+                                    input.setText("")
+                                    FirebaseFirestore.getInstance()
+                                        .collection("feed_posts")
+                                        .document(postId)
+                                        .update("commentCount", FieldValue.increment(1))
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Failed to post comment", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                }
 
-                input.setText("")
             }
         }
 

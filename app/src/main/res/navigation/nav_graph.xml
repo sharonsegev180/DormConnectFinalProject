@@ -63,5 +63,12 @@
         app:destination="@id/homeFragment" />
     </fragment>
 
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.dormconnectapp.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
+
+
 
 </navigation>
