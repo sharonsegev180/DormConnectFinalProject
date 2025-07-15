@@ -1,4 +1,4 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.ui.chat
 
 import android.os.Bundle
 import android.util.Log
@@ -9,7 +9,9 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.dormconnectapp.data.ChatMessage
+import com.example.dormconnectapp.ChatAdapter
+import com.example.dormconnectapp.R
+import com.example.dormconnectapp.data.local.ChatMessage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -41,6 +43,7 @@ class ChatFragment : Fragment() {
         adapter = ChatAdapter(messages)
         chatRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         chatRecyclerView.adapter = adapter
+
 
         listenForMessages()
 
@@ -83,9 +86,12 @@ class ChatFragment : Fragment() {
                     if (message != null) {
                         messages.add(message)
                     }
+                    Log.d("ChatFragment", "Messages fetched: ${snapshot.size()}")
+
                 }
                 adapter.notifyDataSetChanged()
                 chatRecyclerView.scrollToPosition(messages.size - 1)
             }
+
     }
 }

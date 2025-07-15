@@ -1,4 +1,4 @@
-package com.example.dormconnectapp.data
+package com.example.dormconnectapp.data.local
 
 import com.google.firebase.Timestamp
 

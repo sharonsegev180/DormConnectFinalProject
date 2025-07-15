@@ -1,11 +1,12 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.ui.feed
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.dormconnectapp.data.Comment
+import com.example.dormconnectapp.R
+import com.example.dormconnectapp.data.local.Comment
 
 class CommentAdapter(private val comments: List<Comment>) :
     RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {

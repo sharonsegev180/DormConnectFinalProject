@@ -1,4 +1,4 @@
-package com.example.dormconnectapp.data
+package com.example.dormconnectapp.data.local
 
 /**
  * A generic class that holds a value with its loading status.

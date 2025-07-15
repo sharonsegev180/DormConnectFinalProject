@@ -1,4 +1,4 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.ui.profile
 
 import android.os.Bundle
 import android.view.LayoutInflater

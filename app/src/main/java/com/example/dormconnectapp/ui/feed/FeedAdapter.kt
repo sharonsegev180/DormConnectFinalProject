@@ -1,4 +1,4 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.ui.feed
 
 import android.text.format.DateUtils
 import android.view.LayoutInflater
@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.dormconnectapp.data.FeedPost
+import com.example.dormconnectapp.data.local.FeedPost
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -17,7 +17,8 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.dormconnectapp.data.Comment
+import com.example.dormconnectapp.R
+import com.example.dormconnectapp.data.local.Comment
 import com.google.firebase.firestore.Query
 import java.io.File
 
