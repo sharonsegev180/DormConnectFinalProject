@@ -1,4 +1,4 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.ui.auth
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.dormconnectapp.databinding.FragmentLoginBinding
 import com.google.firebase.auth.FirebaseAuth
-import androidx.navigation.fragment.findNavController
+import com.example.dormconnectapp.R
 import com.google.firebase.firestore.FirebaseFirestore
 
 

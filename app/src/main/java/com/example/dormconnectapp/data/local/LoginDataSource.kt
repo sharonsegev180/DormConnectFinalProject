@@ -1,4 +1,4 @@
-package com.example.dormconnectapp.data
+package com.example.dormconnectapp.data.local
 
 import com.example.dormconnectapp.data.model.LoggedInUser
 import java.io.IOException

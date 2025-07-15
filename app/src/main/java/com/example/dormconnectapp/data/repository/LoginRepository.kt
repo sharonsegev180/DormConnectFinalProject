@@ -1,5 +1,7 @@
-package com.example.dormconnectapp.data
+package com.example.dormconnectapp.data.repository
 
+import com.example.dormconnectapp.data.local.LoginDataSource
+import com.example.dormconnectapp.data.local.Result
 import com.example.dormconnectapp.data.model.LoggedInUser
 
 /**

@@ -1,4 +1,4 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.ui.home
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,12 +7,9 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.dormconnectapp.databinding.FragmentHomeBinding
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.*
 import androidx.lifecycle.lifecycleScope
-
-
-
+import com.example.dormconnectapp.R
 
 
 class HomeFragment : Fragment() {

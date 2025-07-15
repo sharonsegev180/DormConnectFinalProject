@@ -1,4 +1,4 @@
-package com.example.dormconnectapp
+package com.example.dormconnectapp.ui.feed
 
 import android.Manifest
 import android.app.Activity
@@ -15,23 +15,26 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.dormconnectapp.R
 import com.example.dormconnectapp.databinding.FragmentFeedBinding
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import com.example.dormconnectapp.data.FeedPost
+import com.example.dormconnectapp.data.local.FeedPost
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.storage.FirebaseStorage
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class Feedfragment : Fragment() {
 
@@ -303,11 +306,11 @@ class Feedfragment : Fragment() {
         val dLat = Math.toRadians(postLat - userLat)
         val dLon = Math.toRadians(postLon - userLon)
 
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(userLat)) * Math.cos(Math.toRadians(postLat)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(userLat)) * cos(Math.toRadians(postLat)) *
+                sin(dLon / 2) * sin(dLon / 2)
 
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
         val distance = earthRadius * c
 
         return distance <= maxDistanceKm
