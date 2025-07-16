@@ -32,18 +32,6 @@
     </fragment>
 
     <fragment
-        android:id="@+id/Homefragment"
-        android:name="com.example.dormconnectapp.ui.home.HomeFragment"
-        android:label="Home"
-        tools:layout="@layout/fragment_home" />
-
-    <fragment
-        android:id="@+id/Feedfragment"
-        android:name="com.example.dormconnectapp.ui.feed.Feedfragment"
-        android:label="Feed"
-        tools:layout="@layout/fragment_feed" />
-
-    <fragment
         android:id="@+id/chatFragment"
         android:name="com.example.dormconnectapp.ui.chat.ChatFragment"
         android:label="Chat"
